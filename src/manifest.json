@@ -1,21 +1,26 @@
 {
-	"name": "Nostr GitHub Integration",
-	"description": "Adds a command to generate Nostr events from GitHub permalinks",
-	"version": "0.1.0",
-	"manifest_version": 3,
-	"permissions": [],
-	"content_scripts": [
-	  {
-		"matches": ["*://github.com/*"],
-		"js": ["content-script.js"],
-		"run_at": "document_idle"
-	  }
-	],
-	"background": {
-	  "service_worker": "background.js"
-	},
-	"action": {
-	  "default_title": "Nostr Git Integration"
-	}
-  }
-  
+  "name": "Nostr GitHub Integration",
+  "description": "Adds a command to generate Nostr events from GitHub permalinks",
+  "version": "0.1.0",
+  "manifest_version": 3,
+  "permissions": [],
+  "content_scripts": [
+    {
+      "matches": ["*://github.com/*"],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Nostr Git Integration"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["svg/*.svg"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Adds a command to generate Nostr events from GitHub permalinks",
   "scripts": {
-    "build": "tsc && copyfiles -u 1 src/manifest.json dist"
+    "build": "tsc && copyfiles -u 1 src/manifest.json src/svg/nostr-icon.svg dist"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.313",

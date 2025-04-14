@@ -14,8 +14,7 @@ chrome.storage.sync.get(["nostrRelays"], ({ nostrRelays }) => {
 saveBtn.addEventListener("click", () => {
   const relays = relayList.value
     .split("\n")
-    .map((r) => r.trim())
-    .filter((r) => r.startsWith("wss://"));
+    .map((r) => r.trim());
   chrome.storage.sync.set({ nostrRelays: relays }, () => {
     statusElement.textContent = "Relays saved!";
     setTimeout(() => (statusElement.textContent = ""), 2000);

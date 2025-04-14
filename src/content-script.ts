@@ -4,6 +4,7 @@ import {
   createCodeSnippetEvent,
   createRepoAnnouncementEvent,
   fetchRepoEvent,
+  publishEvent,
 } from "./event";
 import { requestNip07Signature } from "./requestNip07Signature";
 import {
@@ -12,13 +13,14 @@ import {
   parseSnippetLink,
 } from "./github";
 import { promptForSnippetDescription } from "./createSnippetDescriptionDialog";
+import { getActiveRelays } from "./defaults";
 
 injectNostrBridge();
 
-const relays = ["wss://relay.damus.io"];
-
-function insertNostrRepoCommand() {
+async function insertNostrRepoCommand() {
   let event: NostrEvent | undefined;
+
+  const relays = await getActiveRelays();
 
   const existingItem = document.getElementById("nostr-share-repo-button");
   if (existingItem) return;
@@ -49,8 +51,7 @@ function insertNostrRepoCommand() {
         const unsignedEvent = await createRepoAnnouncementEvent(relays);
         if (unsignedEvent) {
           console.log("Unsigned event:", unsignedEvent);
-          const signed = await requestNip07Signature(unsignedEvent);
-          console.log("Signed event:", signed);
+          await publishEvent(unsignedEvent, relays);
         }
       });
     }
@@ -104,7 +105,7 @@ async function injectSvgInline(
   }
 }
 
-function injectNostrMenuCommand() {
+async function injectNostrMenuCommand() {
   // Check if we already added te new item to avoid duplication
   const existingItem = document.getElementById("nostr-generate-event-label");
   if (existingItem) return;
@@ -113,6 +114,9 @@ function injectNostrMenuCommand() {
     "span.prc-ActionList-ItemLabel-TmBhn"
   );
   if (!menuItems) return;
+
+  const relays = await getActiveRelays();
+  console.log(relays);
 
   // Look for the menu item whose text is "Copy permalink"
   const copyPermalinkItem = Array.from(menuItems).find(
@@ -143,6 +147,7 @@ function injectNostrMenuCommand() {
       const permalinkData = parsePermalink();
       const nostrEvent = await createCodeReferenceEvent(permalinkData!, relays);
       console.log("Successfully created Nostr event:", nostrEvent);
+	  await publishEvent(nostrEvent, relays);
     } catch (err) {
       console.error("Error generating Nostr event:", err);
       alert("Failed to generate Nostr event. Check console for details.");
@@ -155,7 +160,10 @@ function injectNostrMenuCommand() {
     if (desc) {
       const snippetData = parseSnippetLink();
       const nostrEvent = createCodeSnippetEvent(snippetData!, desc);
-      console.log("Successfully created Nostr event:", nostrEvent);
+      await publishEvent(nostrEvent, relays);
+      console.log(
+        `Successfully poster Nostr event: ${nostrEvent} to relays: ${relays}`
+      );
     }
   });
 }

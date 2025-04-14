@@ -1,4 +1,4 @@
-import { EventTemplate, NostrEvent, SimplePool } from "nostr-tools";
+import { EventTemplate, finalizeEvent, NostrEvent, SimplePool } from "nostr-tools";
 import {
   extractLatestCommitInfo,
   extractRepoMetadata,
@@ -8,6 +8,7 @@ import {
 } from "./github";
 import langMap from "lang-map";
 import { SnipptDescription } from "./createSnippetDescriptionDialog";
+import { requestNip07Signature } from "./requestNip07Signature";
 
 export async function fetchRepoEvent(
   relays: string[]
@@ -64,7 +65,7 @@ export async function createRepoAnnouncementEvent(
     ["name", repo],
     ["web", repoUrl],
     ["clone", cloneUrl],
-    ["alt", `git repository: ${repo}-${about.description}`],
+    ["alt", `git repository: ${repo}`],
   ];
 
   if (about.description) tags.push(["description", about.description]);
@@ -190,4 +191,10 @@ function getLanguageFromFilename(filename: string): string {
   const ext = filename.split(".").pop()?.toLowerCase() || "";
   const langs = langMap.languages(ext);
   return langs?.[0] || "text";
+}
+
+export async function publishEvent(event: EventTemplate, relays: string[]) {
+  const pool = new SimplePool();
+  const signedEvent = await requestNip07Signature(event);
+  pool.publish(relays, signedEvent);
 }

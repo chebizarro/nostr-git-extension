@@ -6,13 +6,13 @@ import {
   fetchRepoEvent,
   publishEvent,
 } from "./event";
-import { requestNip07Signature } from "./requestNip07Signature";
+import { requestNip07Signature } from "./nip07";
 import {
   extractLatestCommitInfo,
   parsePermalink,
   parseSnippetLink,
 } from "./github";
-import { promptForSnippetDescription } from "./createSnippetDescriptionDialog";
+import { promptForSnippetDescription } from "./snippet-dialog";
 import { getActiveRelays } from "./defaults";
 
 injectNostrBridge();
@@ -147,7 +147,7 @@ async function injectNostrMenuCommand() {
       const permalinkData = parsePermalink();
       const nostrEvent = await createCodeReferenceEvent(permalinkData!, relays);
       console.log("Successfully created Nostr event:", nostrEvent);
-	  await publishEvent(nostrEvent, relays);
+      await publishEvent(nostrEvent, relays);
     } catch (err) {
       console.error("Error generating Nostr event:", err);
       alert("Failed to generate Nostr event. Check console for details.");

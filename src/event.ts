@@ -1,4 +1,4 @@
-import { EventTemplate, finalizeEvent, NostrEvent, SimplePool } from "nostr-tools";
+import { EventTemplate, NostrEvent, SimplePool } from "nostr-tools";
 import {
   extractLatestCommitInfo,
   extractRepoMetadata,
@@ -7,8 +7,8 @@ import {
   SnippetData,
 } from "./github";
 import langMap from "lang-map";
-import { SnipptDescription } from "./createSnippetDescriptionDialog";
-import { requestNip07Signature } from "./requestNip07Signature";
+import { SnipptDescription } from "./snippet-dialog";
+import { requestNip07Signature } from "./nip07";
 
 export async function fetchRepoEvent(
   relays: string[]

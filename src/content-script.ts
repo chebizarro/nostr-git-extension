@@ -1,21 +1,63 @@
+import { nip19, NostrEvent } from "nostr-tools";
+import {
+  createCodeReferenceEvent,
+  createCodeSnippetEvent,
+  createRepoAnnouncementEvent,
+  fetchRepoEvent,
+} from "./event";
+import { requestNip07Signature } from "./requestNip07Signature";
+import {
+  extractLatestCommitInfo,
+  parsePermalink,
+  parseSnippetLink,
+} from "./github";
+import { promptForSnippetDescription } from "./createSnippetDescriptionDialog";
+
+injectNostrBridge();
+
+const relays = ["wss://relay.damus.io"];
+
 function insertNostrRepoCommand() {
-  // Check if we already added te new item to avoid duplication
+  let event: NostrEvent | undefined;
+
   const existingItem = document.getElementById("nostr-share-repo-button");
   if (existingItem) return;
 
   const buttons = document.getElementById("repository-details-container");
   if (!buttons) return;
 
-  const button = createButton();
+  const [button, label] = createButton();
 
   buttons.firstElementChild?.insertAdjacentElement("afterbegin", button);
 
-  button.addEventListener("click", async () => {
-    console.log("Button clicked");
+  fetchRepoEvent(relays).then((e) => {
+    event = e;
+    if (e) {
+      label.textContent = "Open on gitworkshop.dev";
+      injectSvgInline(label, "svg/gitworkshop.svg");
+      button.addEventListener("click", () => {
+        const npub = nip19.npubEncode(e.pubkey);
+        const repo = e.tags.find((t) => t[0] === "d")?.[1];
+
+        const url = `https://gitworkshop.dev/${npub}/${repo}`;
+        window.open(url, "_blank");
+      });
+    } else {
+      label.textContent = "Share on Nostr";
+      injectSvgInline(label, "svg/nostr-icon.svg");
+      button.addEventListener("click", async () => {
+        const unsignedEvent = await createRepoAnnouncementEvent(relays);
+        if (unsignedEvent) {
+          console.log("Unsigned event:", unsignedEvent);
+          const signed = await requestNip07Signature(unsignedEvent);
+          console.log("Signed event:", signed);
+        }
+      });
+    }
   });
 }
 
-function createButton() {
+function createButton(): [HTMLLIElement, HTMLSpanElement] {
   const li = document.createElement("li");
   const div = document.createElement("div");
   div.className = "Box-sc-g0xbh4-0 YUPas";
@@ -32,16 +74,14 @@ function createButton() {
   labelSpan.id = "nostr-share-repo-button";
   labelSpan.className = "prc-Button-Label-pTQ3x";
 
-  injectSvgInline(labelSpan, "svg/nostr-icon.svg");
-
-  labelSpan.textContent = "Share on Nostr";
+  labelSpan.textContent = "Loading...";
 
   buttonContainer.appendChild(labelSpan);
   button.appendChild(buttonContainer);
   div.appendChild(button);
   li.appendChild(div);
 
-  return li;
+  return [li, labelSpan];
 }
 
 async function injectSvgInline(
@@ -80,27 +120,42 @@ function injectNostrMenuCommand() {
   );
   if (!copyPermalinkItem) return;
 
-  const listItem = createPermalinkMenuItem();
-
   const rootItem = copyPermalinkItem?.closest(
     ".prc-ActionList-ActionListItem-uq6I7"
   );
 
-  rootItem?.insertAdjacentElement("afterend", listItem);
+  const permalinkItem = createMenuItem("Create Nostr permalink");
 
-  listItem.addEventListener("click", async () => {
+  rootItem?.insertAdjacentElement("afterend", permalinkItem);
+
+  const snippetItem = createMenuItem("Create Nostr snippet");
+
+  permalinkItem.insertAdjacentElement("afterend", snippetItem);
+
+  permalinkItem.addEventListener("click", async () => {
+    closeGitHubContextMenu();
     const permalink = extractPermalink();
     if (!permalink) {
       alert("Could not locate the permalink URL. Please try again.");
       return;
     }
     try {
-      //const nostrEvent = await createAndSignEvent(permalink);
-      //console.log("Successfully created Nostr event:", nostrEvent);
-      alert("Created Nostr event. Check console for details.");
+      const permalinkData = parsePermalink();
+      const nostrEvent = await createCodeReferenceEvent(permalinkData!, relays);
+      console.log("Successfully created Nostr event:", nostrEvent);
     } catch (err) {
       console.error("Error generating Nostr event:", err);
       alert("Failed to generate Nostr event. Check console for details.");
+    }
+  });
+
+  snippetItem.addEventListener("click", async () => {
+    closeGitHubContextMenu();
+    const desc = await promptForSnippetDescription();
+    if (desc) {
+      const snippetData = parseSnippetLink();
+      const nostrEvent = createCodeSnippetEvent(snippetData!, desc);
+      console.log("Successfully created Nostr event:", nostrEvent);
     }
   });
 }
@@ -108,6 +163,18 @@ function injectNostrMenuCommand() {
 function extractPermalink(): string | null {
   const currentURL = window.location.href;
   return currentURL || null;
+}
+
+function closeGitHubContextMenu() {
+  const escapeEvent = new KeyboardEvent("keydown", {
+    key: "Escape",
+    code: "Escape",
+    keyCode: 27,
+    bubbles: true,
+    cancelable: true,
+  });
+
+  document.dispatchEvent(escapeEvent);
 }
 
 function startObserver() {
@@ -122,7 +189,7 @@ function startObserver() {
   });
 }
 
-function createPermalinkMenuItem(): HTMLLIElement {
+function createMenuItem(label: string): HTMLLIElement {
   // Create the <li> element
   const li = document.createElement("li");
   li.tabIndex = -1;
@@ -148,7 +215,7 @@ function createPermalinkMenuItem(): HTMLLIElement {
   const labelSpan = document.createElement("span");
   labelSpan.id = "nostr-generate-event-label";
   labelSpan.className = "prc-ActionList-ItemLabel-TmBhn";
-  labelSpan.textContent = "Create Nostr permalink";
+  labelSpan.textContent = label;
 
   // Nest the elements
   subContentSpan.appendChild(labelSpan);
@@ -157,6 +224,15 @@ function createPermalinkMenuItem(): HTMLLIElement {
   li.appendChild(div);
 
   return li;
+}
+
+function injectNostrBridge(): void {
+  const script = document.createElement("script");
+  script.src = chrome.runtime.getURL("page-bridge.js");
+  script.type = "module";
+  script.async = false;
+  document.documentElement.appendChild(script);
+  script.remove();
 }
 
 injectNostrMenuCommand();

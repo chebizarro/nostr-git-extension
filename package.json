@@ -2,15 +2,18 @@
   "name": "nostr-github-extension",
   "version": "0.1.0",
   "description": "Adds a command to generate Nostr events from GitHub permalinks",
+  "type": "module",
   "scripts": {
-    "build": "tsc && copyfiles -u 1 src/manifest.json src/svg/nostr-icon.svg dist"
+    "build": "node esbuild.config.js"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.313",
     "copyfiles": "^2.4.1",
+    "esbuild": "^0.25.2",
     "typescript": "^5.8.2"
   },
   "dependencies": {
+    "lang-map": "^0.4.0",
     "nostr-tools": "^2.11.0"
   }
 }

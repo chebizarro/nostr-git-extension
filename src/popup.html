@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Configure Relays</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        width: 300px;
+        padding: 10px;
+      }
+      textarea {
+        width: 100%;
+        height: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <h3>Nostr Relays</h3>
+    <textarea
+      id="relayList"
+      placeholder="wss://relay.damus.io&#10;wss://relay.snort.social"
+      spellcheck="false"
+    >
+    </textarea>
+    <br />
+    <button id="saveBtn">Save</button>
+    <p id="status"></p>
+    <script src="popup.js" type="module"></script>
+  </body>
+</html>

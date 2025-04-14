@@ -3,7 +3,7 @@
   "description": "Adds a command to generate Nostr events from GitHub permalinks",
   "version": "0.1.0",
   "manifest_version": 3,
-  "permissions": [],
+  "permissions": ["storage"],
   "content_scripts": [
     {
       "matches": ["*://github.com/*"],
@@ -15,11 +15,18 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "Nostr Git Integration"
+    "default_title": "Nostr Git Integration",
+	"default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+	}
   },
   "web_accessible_resources": [
     {
-      "resources": ["svg/*.svg"],
+      "resources": ["page-bridge.js", "svg/*.svg"],
       "matches": ["<all_urls>"]
     }
   ]

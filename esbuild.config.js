@@ -1,5 +1,6 @@
 import { build } from "esbuild";
 import { copyFileSync, mkdirSync } from "fs";
+import { utils } from "nostr-tools";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -28,7 +29,8 @@ await build({
     "content-script": "src/content-script.ts",
     "background": "src/background.ts",
 	"page-bridge": "src/page-bridge.ts",
-	"popup": "src/popup.ts"
+	"popup": "src/popup.ts",
+	"utils": "src/utils.ts",
   },
   bundle: true,
   outdir,

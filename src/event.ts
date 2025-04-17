@@ -1,4 +1,4 @@
-import { EventTemplate, NostrEvent, SimplePool } from "nostr-tools";
+import { EventTemplate, nip19, NostrEvent, SimplePool } from "nostr-tools";
 import {
   extractLatestCommitInfo,
   extractRepoMetadata,
@@ -193,8 +193,36 @@ function getLanguageFromFilename(filename: string): string {
   return langs?.[0] || "text";
 }
 
-export async function publishEvent(event: EventTemplate, relays: string[]) {
+export async function publishEvent(
+  event: EventTemplate,
+  relays: string[]
+): Promise<NostrEvent> {
   const pool = new SimplePool();
   const signedEvent = await requestNip07Signature(event);
   pool.publish(relays, signedEvent);
+  return signedEvent;
+}
+
+/**
+ * Encodes a NostrEvent as a NIP-19 nevent and copies it to the clipboard.
+ * @param event The NostrEvent object to encode
+ */
+export async function copyNeventToClipboard(
+  event: NostrEvent,
+  relays?: string[]
+) : Promise<string | undefined> {
+  try {
+    const nevent = nip19.neventEncode({
+      id: event.id,
+      relays: relays || [],
+      author: event.pubkey,
+      kind: event.kind,
+    });
+
+    await navigator.clipboard.writeText(nevent);
+    console.log("✅ Copied nevent to clipboard:", nevent);
+	return nevent;
+  } catch (err) {
+    console.error("❌ Failed to copy nevent:", err);
+  }
 }

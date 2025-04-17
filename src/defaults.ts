@@ -3,7 +3,7 @@ export const DEFAULT_RELAYS = [
   "wss://nos.lol",
   "wss://relay.snort.social",
   "wss://nostr.wine",
-  "wss://eden.nostr.land",
+  "wss://bitcoiner.social/",
 ];
 
 export function getActiveRelays(): Promise<string[]> {

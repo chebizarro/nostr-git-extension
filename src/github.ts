@@ -240,7 +240,7 @@ export function parsePermalink(): PermalinkData | null {
     ) as HTMLTextAreaElement;
     const contentLines = contextTextarea?.value?.split("\n") ?? [];
     const content = endLine
-      ? contentLines.slice(startLine! - 1, endLine! - 1).join("\n")
+      ? contentLines.slice(startLine! - 1, endLine!).join("\n")
       : contentLines[startLine! - 1] ?? "";
 
     return {

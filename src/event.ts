@@ -93,6 +93,7 @@ export function createCodeSnippetEvent(
 ): EventTemplate {
   const language = getLanguageFromFilename(snipppetData.filePath);
   const extension = getExtension(snipppetData.filePath);
+  const about = extractRepoMetadata();
 
   const tags: string[][] = [
     ["extension", extension],
@@ -102,7 +103,6 @@ export function createCodeSnippetEvent(
       "description",
       snippetDesc ? snippetDesc.description : snipppetData.description,
     ],
-    ["license", snipppetData.license],
     ["alt", `code snippet: ${snipppetData.filePath}`],
     [
       "repo",
@@ -114,6 +114,10 @@ export function createCodeSnippetEvent(
     tags.push(["runtime", snipppetData.runtime]);
   } else if (snippetDesc && snippetDesc?.runtime) {
     tags.push(["runtime", snippetDesc.runtime]);
+  }
+
+  if (snipppetData.license) {
+    tags.push(["license", snipppetData.license]);
   }
 
   return {
@@ -210,7 +214,7 @@ export async function publishEvent(
 export async function copyNeventToClipboard(
   event: NostrEvent,
   relays?: string[]
-) : Promise<string | undefined> {
+): Promise<string | undefined> {
   try {
     const nevent = nip19.neventEncode({
       id: event.id,
@@ -221,8 +225,99 @@ export async function copyNeventToClipboard(
 
     await navigator.clipboard.writeText(nevent);
     console.log("✅ Copied nevent to clipboard:", nevent);
-	return nevent;
+    return nevent;
   } catch (err) {
     console.error("❌ Failed to copy nevent:", err);
   }
+}
+
+export interface IssueEventBundle {
+  issueEvent: NostrEvent;
+  commentEvents: NostrEvent[];
+}
+
+/**
+ * Generates a Nostr event for a GitHub issue and its comments.
+ * @param owner The owner of the GitHub repository
+ * @param repo The name of the GitHub repository
+ * @param issueNumber The number of the issue
+ * @param pubkey The public key of the user creating the event
+ * @param relays An array of relay URLs to publish the event to
+ * @returns An object containing the issue event and an array of comment events
+ */
+export async function generateNostrIssueThread(
+  owner: string,
+  repo: string,
+  issueNumber: number,
+  pubkey: string,
+  relays: string[] = []
+): Promise<IssueEventBundle> {
+  const issueRes = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`
+  );
+  if (!issueRes.ok) throw new Error("Failed to fetch GitHub issue");
+  const issue = await issueRes.json();
+
+  const commentsRes = await fetch(issue.comments_url);
+  const comments = commentsRes.ok ? await commentsRes.json() : [];
+
+  const now = Math.floor(Date.now() / 1000);
+  const baseTags: string[][] = [
+    ["d", `issue-${issue.number}`],
+    ["type", "issue"],
+    ["title", issue.title],
+    ["repo", `${owner}/${repo}`],
+    ["url", issue.html_url],
+    ["author", issue.user?.login ?? ""],
+    [
+      "created_at",
+      `${Math.floor(new Date(issue.created_at).getTime() / 1000)}`,
+    ],
+    [
+      "updated_at",
+      `${Math.floor(new Date(issue.updated_at).getTime() / 1000)}`,
+    ],
+    ...relays.map((r) => ["relays", r]),
+    ...issue.labels.map((label: any) => ["t", label.name.toLowerCase()]),
+  ];
+
+  const authorTag = ["p", issue.user?.login ?? ""];
+  baseTags.push(authorTag);
+
+  const issueEvent: NostrEvent = {
+    kind: 1621,
+    created_at: now,
+    content: issue.body || "",
+    tags: baseTags,
+    pubkey,
+    id: "",
+    sig: "",
+  };
+
+  const commentEvents: NostrEvent[] = comments.map((comment: any) => {
+    const createdAt = Math.floor(new Date(comment.created_at).getTime() / 1000);
+
+    const tags: string[][] = [
+      ["e", `issue-${issue.number}`],
+      ["type", "comment"],
+      ["repo", `${owner}/${repo}`],
+      ["issue_number", `${issue.number}`],
+      ["url", comment.html_url],
+      ["author", comment.user?.login ?? ""],
+      ["p", comment.user?.login ?? ""],
+      ...relays.map((r) => ["relays", r]),
+    ];
+
+    return {
+      kind: 1111,
+      created_at: createdAt,
+      content: comment.body || "",
+      tags,
+      pubkey,
+      id: "",
+      sig: "",
+    };
+  });
+
+  return { issueEvent, commentEvents };
 }

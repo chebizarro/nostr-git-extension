@@ -10,13 +10,29 @@ import {
 import { parsePermalink, parseSnippetLink } from "./github";
 import { promptForSnippetDescription } from "./snippet-dialog";
 import { getActiveRelays } from "./defaults";
-import { createButton, createMenuItem, createSmallButton, injectSvgInline, showSnackbar } from "./utils";
+import {
+  createButton,
+  createMenuItem,
+  createSmallButton,
+  injectSvgInline,
+  showSnackbar,
+} from "./utils";
 
 injectNostrBridge();
 
-async function insertNostrRepoCommand() {
-  const relays = await getActiveRelays();
+async function insertNostrIssuesCommand() {
+  const buttons = document.querySelector("div.-VisibleItems-module__Box_1--_dgKR");
+  if (!buttons) return;
 
+  const [button, label] = createButton();
+  buttons.firstElementChild?.insertAdjacentElement("afterbegin", button);
+
+  label.textContent = "Share on Nostr";
+  injectSvgInline(label, "svg/nostr-icon.svg", ["octicon", "mr-2"]);
+
+}
+
+async function insertNostrRepoCommand() {
   const existingItem = document.getElementById("nostr-share-repo-button");
   if (existingItem) return;
 
@@ -25,6 +41,8 @@ async function insertNostrRepoCommand() {
 
   const buttons = document.getElementById("repository-details-container");
   if (!buttons) return;
+
+  const relays = await getActiveRelays();
 
   const [button, label] = createButton();
   buttons.firstElementChild?.insertAdjacentElement("afterbegin", button);
@@ -80,7 +98,6 @@ async function insertNostrRepoCommand() {
     }
   });
 }
-
 
 async function injectNostrMenuCommand() {
   // Check if we already added te new item to avoid duplication
@@ -179,7 +196,6 @@ function startObserver() {
   });
 }
 
-
 function injectNostrBridge(): void {
   const script = document.createElement("script");
   script.src = chrome.runtime.getURL("page-bridge.js");
@@ -191,4 +207,5 @@ function injectNostrBridge(): void {
 
 injectNostrMenuCommand();
 insertNostrRepoCommand();
+insertNostrIssuesCommand();
 startObserver();

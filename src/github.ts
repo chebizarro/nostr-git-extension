@@ -97,15 +97,6 @@ export function extractRepoMetadata(): GitHubRepoMetadata {
         if (pkgJson) {
           const rawLines = embedded?.payload?.blob?.rawLines;
           if (Array.isArray(rawLines)) {
-            const licenseLine = rawLines.find((line: string) =>
-              line.trim().startsWith('"license"')
-            );
-            if (licenseLine) {
-              const match = licenseLine.match(/"license"\s*:\s*"([^"]+)"/);
-              if (match) {
-                metadata.license = match[1];
-              }
-            }
             const enginesLine = rawLines.find((line: string) =>
               line.includes('"node"')
             );
@@ -114,6 +105,15 @@ export function extractRepoMetadata(): GitHubRepoMetadata {
               if (match) {
                 metadata.runtime = `node ${match[1]}`;
               }
+            }
+          }
+          const licenseLine = rawLines.find((line: string) =>
+            line.trim().startsWith('"license"')
+          );
+          if (licenseLine) {
+            const match = licenseLine.match(/"license"\s*:\s*"([^"]+)"/);
+            if (match) {
+              metadata.license = match[1];
             }
           }
         }
@@ -185,7 +185,7 @@ export function parseSnippetLink(): SnippetData | null {
 
     const metadata = extractRepoMetadata();
     const license = metadata.license!;
-	const runtime = metadata.runtime;
+    const runtime = metadata.runtime;
 
     return {
       host: hostname,
@@ -197,7 +197,7 @@ export function parseSnippetLink(): SnippetData | null {
       content,
       description,
       license,
-	  runtime,
+      runtime,
     };
   } catch (err) {
     console.log(err);

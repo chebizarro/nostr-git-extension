@@ -6,6 +6,7 @@
 Seamlessly integrate your GitHub workflow with the Nostr network. This browser extension enables you to create repo announcements, share code snippets, and generate permalinks directly from GitHub, publishing them to your selected Nostr relays.
 
 ![Extension Overview](docs/images/overview.png)
+
 *The Nostr Git extension adds convenient integration points throughout the GitHub interface*
 
 ---
@@ -17,6 +18,7 @@ Seamlessly integrate your GitHub workflow with the Nostr network. This browser e
 - Share your projects with the Nostr community
 
 ![Repo Announcement](docs/images/repo-announcement.png)
+
 *Creating a repository announcement with metadata*
 
 ### Code Sharing
@@ -24,7 +26,12 @@ Seamlessly integrate your GitHub workflow with the Nostr network. This browser e
 - **Generate Nostr permalinks** (proposed kind: `1623`) from selected line ranges
 
 ![Code Snippet](docs/images/code-snippet.png)
+
 *Sharing code snippets with syntax highlighting and context*
+
+![Code Snippet](docs/images/permalink.png)
+
+*Sharing GitHub Permalinks with full line numbers and snippet*
 
 ### Rich Metadata
 Automatically extracts and includes:
@@ -38,6 +45,7 @@ Automatically extracts and includes:
 - Secure signing with your browser's NIP-07 compatible signer (e.g. [AKA Profiles](https://akaprofiles.com/))
 
 ![Relay Configuration](docs/images/relay-config.png)
+
 *Configure your preferred Nostr relays through the extension popup*
 
 ---
@@ -84,9 +92,6 @@ Firefox users will be able to install directly from Firefox Add-ons.
      - Click **"Load Temporary Add-on"**
      - Select any file in the `dist/nostr-github-extension` directory
 
-![Installation](docs/images/installation.png)
-*Loading the extension in developer mode*
-
 ---
 
 ## How It Works
@@ -97,9 +102,6 @@ Firefox users will be able to install directly from Firefox Add-ons.
 3. Add an optional description in the GitHub-style modal
 4. The extension creates and signs a Nostr event (kind `1337` or `1623`)
 5. The event is published to your configured relays
-
-![Workflow](docs/images/workflow.png)
-*The snippet creation workflow in action*
 
 ### Repository Announcements
 1. Visit any GitHub repository's main page
@@ -113,14 +115,6 @@ Firefox users will be able to install directly from Firefox Add-ons.
 1. Click the Nostr Git icon in your browser toolbar
 2. Connect your NIP-07 compatible signer
 3. Add your preferred relays (e.g. `wss://relay.damus.io`)
-
-### Advanced Options
-- Configure default relay settings
-- Customize metadata inclusion
-- Set up keyboard shortcuts
-
-![Settings](docs/images/settings.png)
-*Advanced configuration options in the extension popup*
 
 ---
 

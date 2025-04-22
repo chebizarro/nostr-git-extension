@@ -3,6 +3,7 @@ import {
   extractLatestCommitInfo,
   extractRepoMetadata,
   fetchRootCommitHash,
+  IssueInfo,
   PermalinkData,
   SnippetData,
 } from "./github";
@@ -232,8 +233,8 @@ export async function copyNeventToClipboard(
 }
 
 export interface IssueEventBundle {
-  issueEvent: NostrEvent;
-  commentEvents: NostrEvent[];
+  issueEvent: EventTemplate;
+  commentEvents: EventTemplate[];
 }
 
 /**
@@ -241,19 +242,16 @@ export interface IssueEventBundle {
  * @param owner The owner of the GitHub repository
  * @param repo The name of the GitHub repository
  * @param issueNumber The number of the issue
- * @param pubkey The public key of the user creating the event
  * @param relays An array of relay URLs to publish the event to
  * @returns An object containing the issue event and an array of comment events
  */
 export async function generateNostrIssueThread(
-  owner: string,
-  repo: string,
-  issueNumber: number,
-  pubkey: string,
+  issueInfo: IssueInfo,
+  repoEvent: NostrEvent,
   relays: string[] = []
 ): Promise<IssueEventBundle> {
   const issueRes = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`
+    `https://api.github.com/repos/${issueInfo.owner}/${issueInfo.repo}/issues/${issueInfo.issueNumber}`
   );
   if (!issueRes.ok) throw new Error("Failed to fetch GitHub issue");
   const issue = await issueRes.json();
@@ -263,46 +261,31 @@ export async function generateNostrIssueThread(
 
   const now = Math.floor(Date.now() / 1000);
   const baseTags: string[][] = [
-    ["d", `issue-${issue.number}`],
-    ["type", "issue"],
-    ["title", issue.title],
-    ["repo", `${owner}/${repo}`],
-    ["url", issue.html_url],
+    ["a", `30617:${repoEvent.pubkey}:${issueInfo.repo}`],
+    ["p", repoEvent.pubkey],
+    ["subject", issue.title],
     ["author", issue.user?.login ?? ""],
-    [
-      "created_at",
-      `${Math.floor(new Date(issue.created_at).getTime() / 1000)}`,
-    ],
-    [
-      "updated_at",
-      `${Math.floor(new Date(issue.updated_at).getTime() / 1000)}`,
-    ],
-    ...relays.map((r) => ["relays", r]),
     ...issue.labels.map((label: any) => ["t", label.name.toLowerCase()]),
   ];
 
-  const authorTag = ["p", issue.user?.login ?? ""];
-  baseTags.push(authorTag);
-
-  const issueEvent: NostrEvent = {
+  const issueEvent: EventTemplate = {
     kind: 1621,
     created_at: now,
     content: issue.body || "",
     tags: baseTags,
-    pubkey,
-    id: "",
-    sig: "",
   };
 
-  const commentEvents: NostrEvent[] = comments.map((comment: any) => {
+  const commentEvents: EventTemplate[] = comments.map((comment: any) => {
     const createdAt = Math.floor(new Date(comment.created_at).getTime() / 1000);
 
     const tags: string[][] = [
-      ["e", `issue-${issue.number}`],
-      ["type", "comment"],
-      ["repo", `${owner}/${repo}`],
+      ["K", "1621"],
+      ["k", "1621"],
+
+      ["I", comment.html_url],
+	  
+      ["repo", `${issueInfo.owner}/${issueInfo.repo}`],
       ["issue_number", `${issue.number}`],
-      ["url", comment.html_url],
       ["author", comment.user?.login ?? ""],
       ["p", comment.user?.login ?? ""],
       ...relays.map((r) => ["relays", r]),
@@ -313,9 +296,6 @@ export async function generateNostrIssueThread(
       created_at: createdAt,
       content: comment.body || "",
       tags,
-      pubkey,
-      id: "",
-      sig: "",
     };
   });
 

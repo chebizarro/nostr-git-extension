@@ -46,7 +46,7 @@ function ensureSnackbarContainer() {
   document.body.appendChild(container);
 }
 
-export function createSmallButton(): [HTMLDivElement, HTMLSpanElement] {
+export function createSmallButton(id: string): [HTMLDivElement, HTMLSpanElement] {
   const div = document.createElement("div");
   div.className = "d-md-none";
 
@@ -59,7 +59,7 @@ export function createSmallButton(): [HTMLDivElement, HTMLSpanElement] {
   buttonContainer.className = "prc-Button-ButtonContent-HKbr-";
 
   const labelSpan = document.createElement("span");
-  labelSpan.id = "nostr-share-repo-button-sml";
+  labelSpan.id = id;
   labelSpan.className = "prc-Button-Visual-2epfX prc-Button-VisualWrap-Db-eB";
 
   buttonContainer.appendChild(labelSpan);
@@ -69,21 +69,20 @@ export function createSmallButton(): [HTMLDivElement, HTMLSpanElement] {
   return [div, labelSpan];
 }
 
-export function createButton(): [HTMLLIElement, HTMLSpanElement] {
-  const li = document.createElement("li");
+export function createButton(id: string, cls: string): [HTMLDivElement, HTMLSpanElement] {
   const div = document.createElement("div");
   div.className = "Box-sc-g0xbh4-0";
 
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "btn-sm btn";
+  button.className = cls;
   button.tabIndex = 1;
 
   const buttonContainer = document.createElement("span");
   buttonContainer.className = "prc-Button-ButtonContent-HKbr-";
 
   const labelSpan = document.createElement("span");
-  labelSpan.id = "nostr-share-repo-button";
+  labelSpan.id = id;
   labelSpan.className = "prc-Button-Label-pTQ3x";
 
   labelSpan.textContent = "Loading...";
@@ -91,9 +90,8 @@ export function createButton(): [HTMLLIElement, HTMLSpanElement] {
   buttonContainer.appendChild(labelSpan);
   button.appendChild(buttonContainer);
   div.appendChild(button);
-  li.appendChild(div);
 
-  return [li, labelSpan];
+  return [div, labelSpan];
 }
 
 export async function injectSvgInline(

@@ -38,6 +38,38 @@ export interface CommitInfo {
   message: string;
 }
 
+export interface IssueInfo {
+  repo: string;
+  owner: string;
+  issueNumber: number;
+  type: "issue" | "pr";
+}
+
+export function parseGitHubIssueURL(
+  url: string = window.location.href
+): IssueInfo | null {
+  try {
+    const { pathname } = new URL(url);
+    const parts = pathname.split("/").filter(Boolean);
+
+    if (parts.length < 4) return null;
+
+    const [owner, repo, section, number] = parts;
+
+    if (!["issues", "pull"].includes(section)) return null;
+
+    return {
+      owner,
+      repo,
+      issueNumber: parseInt(number, 10),
+      type: section === "issues" ? "issue" : "pr",
+    };
+  } catch (err) {
+    console.error("Failed to parse GitHub issue URL:", err);
+    return null;
+  }
+}
+
 export function extractRepoMetadata(): GitHubRepoMetadata {
   const metadata: GitHubRepoMetadata = {};
 

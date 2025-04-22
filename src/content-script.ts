@@ -1,13 +1,18 @@
-import { nip19 } from "nostr-tools";
+import { nip19, NostrEvent } from "nostr-tools";
 import {
   copyNeventToClipboard,
   createCodeReferenceEvent,
   createCodeSnippetEvent,
   createRepoAnnouncementEvent,
   fetchRepoEvent,
+  generateNostrIssueThread,
   publishEvent,
 } from "./event";
-import { parsePermalink, parseSnippetLink } from "./github";
+import {
+  parseGitHubIssueURL,
+  parsePermalink,
+  parseSnippetLink,
+} from "./github";
 import { promptForSnippetDescription } from "./snippet-dialog";
 import { getActiveRelays } from "./defaults";
 import {
@@ -20,40 +25,95 @@ import {
 
 injectNostrBridge();
 
+const repoEventCache: Record<string, Promise<NostrEvent | undefined>> = {};
+
+async function getRepoEvent() {
+  const { pathname } = window.location;
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length < 2) return;
+
+  const [owner, repo] = segments;
+  const cacheKey = `${owner}/${repo}`;
+
+  if (!repoEventCache[cacheKey]) {
+    repoEventCache[cacheKey] = fetchRepoEvent(await getActiveRelays());
+  }
+
+  return repoEventCache[cacheKey];
+}
+
 async function insertNostrIssuesCommand() {
-  const buttons = document.querySelector("div.-VisibleItems-module__Box_1--_dgKR");
+  const id = "nostr-share-issue-button";
+
+  const existingItem = document.getElementById(id);
+  if (existingItem) return;
+
+  const buttons = document.querySelector(
+    "div.Box-sc-g0xbh4-0.bKeiGd.prc-PageHeader-Actions-ygtmj"
+  );
   if (!buttons) return;
 
-  const [button, label] = createButton();
-  buttons.firstElementChild?.insertAdjacentElement("afterbegin", button);
+  getRepoEvent().then((e) => {
+    if (e) {
+      const [button, label] = createButton(id, "prc-Button-ButtonBase-c50BI");
+      buttons.firstElementChild?.insertAdjacentElement("afterbegin", button);
+      label.textContent = "Share Issue on Nostr";
+      button.addEventListener("click", async () => {
+        const relays = await getActiveRelays();
+        const issueInfo = parseGitHubIssueURL();
+        if (!issueInfo) {
+          showSnackbar("❗Could not locate the issue URL. Please try again.");
+          return;
+        }
+        const events = await generateNostrIssueThread(issueInfo, e, relays);
+        const finalEvent = await publishEvent(events.issueEvent, relays);
+        await copyNeventToClipboard(finalEvent, relays);
 
-  label.textContent = "Share on Nostr";
-  injectSvgInline(label, "svg/nostr-icon.svg", ["octicon", "mr-2"]);
+        showSnackbar("✅ Issue published to relays");
 
+        events.commentEvents.forEach(async (comment) => {
+          comment.tags.push(["E", finalEvent.id]);
+		  comment.tags.push(["P", finalEvent.pubkey]);
+          comment.tags.push(["e", finalEvent.id]);
+		  comment.tags.push(["p", finalEvent.pubkey]);
+          const finalCommentEvent = await publishEvent(comment, relays);
+          await copyNeventToClipboard(finalCommentEvent, relays);
+          showSnackbar("✅ Comment published to relays");
+        });
+
+        console.log(events);
+      });
+    }
+  });
 }
 
 async function insertNostrRepoCommand() {
-  const existingItem = document.getElementById("nostr-share-repo-button");
+  const lgButtonId = "nostr-share-repo-button";
+  const smlButtonId = "nostr-share-repo-button-sml";
+
+  const existingItem = document.getElementById(lgButtonId);
   if (existingItem) return;
 
-  const existingSmlButton = document.getElementById("nostr-share-repo-button");
+  const existingSmlButton = document.getElementById(smlButtonId);
   if (existingSmlButton) return;
 
   const buttons = document.getElementById("repository-details-container");
   if (!buttons) return;
 
-  const relays = await getActiveRelays();
-
-  const [button, label] = createButton();
-  buttons.firstElementChild?.insertAdjacentElement("afterbegin", button);
+  const [button, label] = createButton(lgButtonId, "btn-sm btn");
+  const li = document.createElement("li");
+  li.appendChild(button);
+  buttons.firstElementChild?.insertAdjacentElement("afterbegin", li);
 
   const smlButtonDiv = document.querySelector<HTMLFormElement>(
     "form.unstarred.js-social-form"
   );
-  const [smlButton, smlLabel] = createSmallButton();
+  const [smlButton, smlLabel] = createSmallButton(smlButtonId);
   smlButtonDiv!.parentElement!.insertAdjacentElement("afterend", smlButton);
 
-  fetchRepoEvent(relays).then((e) => {
+  const relays = await getActiveRelays();
+
+  getRepoEvent().then((e) => {
     const gitWorkshp = () => {
       const npub = nip19.npubEncode(e!.pubkey);
       const repo = e!.tags.find((t) => t[0] === "d")?.[1];
@@ -189,6 +249,7 @@ function startObserver() {
   const observer = new MutationObserver(() => {
     injectNostrMenuCommand();
     insertNostrRepoCommand();
+    insertNostrIssuesCommand();
   });
   observer.observe(document.documentElement, {
     childList: true,
@@ -205,7 +266,7 @@ function injectNostrBridge(): void {
   script.remove();
 }
 
+insertNostrIssuesCommand();
 injectNostrMenuCommand();
 insertNostrRepoCommand();
-insertNostrIssuesCommand();
 startObserver();

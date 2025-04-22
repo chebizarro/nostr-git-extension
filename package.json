@@ -4,7 +4,12 @@
   "description": "Adds a command to generate Nostr events from GitHub permalinks",
   "type": "module",
   "scripts": {
-    "build": "node esbuild.config.js"
+    "build": "node esbuild.config.js",
+	"build:firefox": "node esbuild.config.js --target=firefox",
+	"build:chrome": "node esbuild.config.js --target=chrome",
+	"build:watch": "node esbuild.config.js --watch",
+	"zip": "zip-a-folder -r ./dist/nostr-github-extension.zip ./dist/nostr-github-extension",
+	"copy": "copyfiles -u 1 \"./src/icons/*\" \"./src/popup/*\" \"./src/manifest.firefox.json\" \"./dist/nostr-github-extension\""
   },
   "devDependencies": {
     "@types/chrome": "^0.0.313",
@@ -14,6 +19,7 @@
   },
   "dependencies": {
     "lang-map": "^0.4.0",
-    "nostr-tools": "^2.11.0"
+    "nostr-tools": "^2.11.0",
+    "zip-a-folder": "^3.1.9"
   }
 }

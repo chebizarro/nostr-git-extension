@@ -11,7 +11,7 @@ This browser extension adds Nostr Git support to GitHub by creating repo annouce
 
 - **Create Nostr git repo announcements** (kind: `3067`) from the main repo page
 - **Create Nostr code snippets** (kind: `1337`) from files or selections
-- **Create Nostr permalinks** (kind: `1623`) from selected GitHub line ranges
+- **Create Nostr permalinks** (proposed kind: `1623`) from selected GitHub line ranges
 - Automatically extracts:
   - Line range
   - File path and extension

@@ -8,7 +8,7 @@
 	"build:firefox": "node esbuild.config.js --target=firefox",
 	"build:chrome": "node esbuild.config.js --target=chrome",
 	"build:watch": "node esbuild.config.js --watch",
-	"zip": "zip-a-folder -r ./dist/nostr-github-extension.zip ./dist/nostr-github-extension",
+	"zip": "node esbuild.config.js --target=chrome --zip",
 	"copy": "copyfiles -u 1 \"./src/icons/*\" \"./src/popup/*\" \"./src/manifest.firefox.json\" \"./dist/nostr-github-extension\""
   },
   "devDependencies": {
